@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Backgrounds */
+  --bg-page:        #F7F4EF;
+  --bg-card:        #FFFFFF;
+  --bg-input:       #F2EFE9;
+  --bg-nav:         #141618;
+  --bg-hover:       #EDE9E2;
+
+  /* Gradients */
+  --gradient-hero:  linear-gradient(135deg, #FBF9F5, #EDE4CC);
+  --gradient-btn:   linear-gradient(135deg, #C9A84C, #A8872A);
+  --gradient-card:  linear-gradient(160deg, #FFFFFF, #FAF7F2);
+  --gradient-gold:  linear-gradient(135deg, #C9A84C, #E8C96A);
+
+  /* Text */
+  --text-primary:   #1C1917;
+  --text-secondary: #57534E;
+  --text-muted:     #A8A29E;
+  --text-inverse:   #F7F4EF;
+  --text-gold:      #92650A;
+
+  /* Accent */
+  --gold:           #C9A84C;
+  --gold-dark:      #92650A;
+  --gold-glow:      rgba(201,168,76,0.15);
+
+  /* Status */
+  --status-green:   #16A34A;
+  --status-yellow:  #D97706;
+  --status-red:     #DC2626;
+  --status-blue:    #2563EB;
+
+  /* Borders */
+  --border:         #E8E2D9;
+  --border-strong:  #D4CCC0;
+
+  /* Areas of Life */
+  --area-business:      #2563EB;
+  --area-health:        #16A34A;
+  --area-finance:       #D97706;
+  --area-relationships: #DB2777;
+  --area-faith:         #C9A84C;
+  --area-learning:      #7C3AED;
+  --area-personal:      #0891B2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Animations */
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(201,168,76,0.4); }
+  50%       { box-shadow: 0 0 24px rgba(201,168,76,0.8); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes fill-square {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Utilities */
+.font-serif  { font-family: 'IBM Plex Serif', Georgia, serif; }
+.font-sans   { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.font-mono   { font-family: 'IBM Plex Mono', monospace; }
+
+.label-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.label-gold {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-gold);
+}
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+/* Input */
+.input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--gradient-btn);
+  color: #1A1D23;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(201,168,76,0.3);
+  transition: filter 0.15s, transform 0.15s;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--gold);
+  color: var(--gold-dark);
+}
+
+/* Status Badges */
+.badge {
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.badge-on-track  { background: rgba(22,163,74,0.1);  color: var(--status-green); }
+.badge-at-risk   { background: rgba(217,119,6,0.1);  color: var(--status-yellow); }
+.badge-behind    { background: rgba(220,38,38,0.1);  color: var(--status-red); }
+.badge-complete  { background: rgba(37,99,235,0.1);  color: var(--status-blue); }
+
+/* Agent glow animation */
+.agent-glow {
+  animation: glow 3s ease-in-out infinite;
+}
