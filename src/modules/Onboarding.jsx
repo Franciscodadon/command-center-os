@@ -24,17 +24,29 @@ export default function Onboarding({ onComplete }) {
 
   // Detect existing session on mount (e.g. after Google OAuth redirect)
   useEffect(() => {
+    const skipToWelcome = (session) => {
+      const name = session.user.user_metadata?.full_name?.split(' ')[0]
+        || session.user.email?.split('@')[0]
+        || ''
+      setFirstName(name)
+      setUser(session.user)
+      setDirection(1)
+      setScreen(1)
+    }
+
+    // Check immediately
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        const name = session.user.user_metadata?.full_name?.split(' ')[0]
-          || session.user.email?.split('@')[0]
-          || ''
-        setFirstName(name)
-        setUser(session.user)
-        setDirection(1)
-        setScreen(1)
+      if (session) skipToWelcome(session)
+    })
+
+    // Also listen for the OAuth callback arriving slightly after mount
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+        skipToWelcome(session)
       }
     })
+
+    return () => subscription.unsubscribe()
   }, [])
   const [visionText, setVisionText] = useState('')
   const [goalTitle, setGoalTitle] = useState('')
