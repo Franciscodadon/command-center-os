@@ -136,7 +136,7 @@ export default function App() {
         userRow, goalsData, tasksData, projectsData, lmData, lmActualsData,
         visionData, journalData, vaultData, ptData, smData, svData,
       ] = await Promise.all([
-        supabase.from('users').select('*').eq('id', userId).single().then(r => r.data),
+        supabase.from('users').select('*').eq('user_id', userId).single().then(r => r.data),
         fetchTable('goals', userId),
         fetchTable('tasks', userId),
         fetchTable('projects', userId),
@@ -154,7 +154,9 @@ export default function App() {
         setUser(userRow)
         setOnboarded(!!userRow.onboarded)
       } else {
-        setOnboarded(false)
+        // Fall back to localStorage if DB users table isn't set up yet
+        const localOnboarded = localStorage.getItem(`onboarded_${userId}`) === 'true'
+        setOnboarded(localOnboarded)
       }
 
       setGoals(goalsData)
@@ -205,6 +207,57 @@ export default function App() {
     setScorecardMetrics([]); setScorecardValues([])
   }
 
+  // Save vision layer — upsert by time_horizon key
+  const saveVisionLayer = async (horizonKey, content) => {
+    const existing = visionLayers.find(v => v.time_horizon === horizonKey)
+    if (existing) {
+      return updateVisionLayer(existing.id, { content, updated_at: new Date().toISOString() })
+    } else {
+      return createVisionLayer({ time_horizon: horizonKey, content })
+    }
+  }
+
+  // Save goal — creates goal + lead measures together
+  const saveGoal = async (form) => {
+    const { lead_measures, ...goalPayload } = form
+    const goal = await createGoal({
+      title: goalPayload.title,
+      area_of_life: goalPayload.area_of_life,
+      time_horizon: goalPayload.time_horizon,
+      due_date: goalPayload.due_date || null,
+      notes: goalPayload.notes || '',
+      progress: goalPayload.progress || 0,
+      status: 'On Track',
+    })
+    if (lead_measures?.length && goal?.id) {
+      const validLms = lead_measures.filter(lm => lm.name?.trim())
+      for (const lm of validLms) {
+        await createLeadMeasure({
+          goal_id: goal.id,
+          name: lm.name.trim(),
+          unit: lm.unit || '',
+          weekly_target: parseFloat(lm.target) || 0,
+        })
+      }
+    }
+    return goal
+  }
+
+  // Journal upsert — create or update based on date
+  const saveJournalEntry = async (payload) => {
+    const existing = journalEntries.find(e => e.date === payload.date)
+    if (existing) {
+      return updateJournalEntry(existing.id, payload)
+    } else {
+      return createJournalEntry(payload)
+    }
+  }
+
+  // Vault upsert
+  const saveVaultEntry = async (payload) => {
+    return createVaultEntry(payload)
+  }
+
   // ── Sign out ───────────────────────────────────────────────────────────────
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -214,7 +267,10 @@ export default function App() {
   // ── Onboarding complete ────────────────────────────────────────────────────
   const handleOnboardingComplete = () => {
     setOnboarded(true)
-    if (session) loadAll(session.user.id)
+    if (session) {
+      localStorage.setItem(`onboarded_${session.user.id}`, 'true')
+      loadAll(session.user.id)
+    }
   }
 
   // ── CRUD helpers ───────────────────────────────────────────────────────────
@@ -466,9 +522,12 @@ export default function App() {
     },
     vision: {
       ...commonProps,
-      goals, visionLayers,
+      goals, visionLayers, leadMeasures, lmActuals,
+      onUpdateVision: saveVisionLayer,
+      onSaveGoal: saveGoal,
       onCreateGoal: createGoal, onUpdateGoal: updateGoal, onDeleteGoal: deleteGoal,
       onCreateVisionLayer: createVisionLayer, onUpdateVisionLayer: updateVisionLayer, onDeleteVisionLayer: deleteVisionLayer,
+      onUpdateLmActual: updateLmActual,
     },
     matrix: {
       ...commonProps,
@@ -492,6 +551,8 @@ export default function App() {
     journal: {
       ...commonProps,
       journalEntries, vaultEntries, goals,
+      onSaveEntry: saveJournalEntry,
+      onSaveVaultEntry: saveVaultEntry,
       onCreateJournalEntry: createJournalEntry, onUpdateJournalEntry: updateJournalEntry, onDeleteJournalEntry: deleteJournalEntry,
       onCreateVaultEntry: createVaultEntry, onUpdateVaultEntry: updateVaultEntry, onDeleteVaultEntry: deleteVaultEntry,
     },
