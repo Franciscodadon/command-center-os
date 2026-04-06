@@ -144,10 +144,12 @@ function TaskExpandPanel({ task, onUpdate, onDelete, onClose }) {
 
 // ─── Task Card ────────────────────────────────────────────────────────────────
 
-function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
+function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers, onMoveUp, onMoveDown, isFirst, isLast }) {
   const [expanded, setExpanded] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const overdue = isOverdue(task.due_date)
   const sub = subtaskProgress(task)
+  const showReorder = !isFirst || !isLast // only show if there are multiple tasks
 
   const handleComplete = (e) => {
     e.stopPropagation()
@@ -172,8 +174,8 @@ function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
           transition: 'box-shadow 0.15s, border-color 0.15s',
           opacity: task.done ? 0.5 : 1,
         }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.09)'; e.currentTarget.style.borderColor = 'var(--border-strong)' }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'var(--border)' }}
+        onMouseEnter={e => { setHovered(true); e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.09)'; e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+        onMouseLeave={e => { setHovered(false); e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'var(--border)' }}
         onClick={() => setExpanded(e => !e)}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
@@ -212,11 +214,48 @@ function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
               )}
             </div>
           </div>
-          <ChevronDown
-            size={13}
-            color="var(--text-muted)"
-            style={{ flexShrink: 0, marginTop: 2, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-          />
+
+          {/* Reorder buttons — visible on hover when multiple tasks exist */}
+          {showReorder && hovered && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                onClick={e => { e.stopPropagation(); onMoveUp?.() }}
+                disabled={isFirst}
+                style={{
+                  background: 'none', border: 'none', cursor: isFirst ? 'default' : 'pointer',
+                  padding: '1px 3px', borderRadius: 4, display: 'flex',
+                  color: isFirst ? 'var(--border-strong)' : 'var(--text-muted)',
+                }}
+                onMouseEnter={e => { if (!isFirst) e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = isFirst ? 'var(--border-strong)' : 'var(--text-muted)' }}
+              >
+                <ChevronUp size={13} />
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); onMoveDown?.() }}
+                disabled={isLast}
+                style={{
+                  background: 'none', border: 'none', cursor: isLast ? 'default' : 'pointer',
+                  padding: '1px 3px', borderRadius: 4, display: 'flex',
+                  color: isLast ? 'var(--border-strong)' : 'var(--text-muted)',
+                }}
+                onMouseEnter={e => { if (!isLast) e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = isLast ? 'var(--border-strong)' : 'var(--text-muted)' }}
+              >
+                <ChevronDown size={13} />
+              </button>
+            </div>
+          )}
+
+          {(!showReorder || !hovered) && (
+            <ChevronDown
+              size={13}
+              color="var(--text-muted)"
+              style={{ flexShrink: 0, marginTop: 2, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+            />
+          )}
         </div>
       </div>
 
@@ -301,7 +340,7 @@ function InlineAdd({ quadrant, onAdd }) {
 
 // ─── Quadrant ─────────────────────────────────────────────────────────────────
 
-function Quadrant({ quadrant, tasks, onCreateTask, onUpdateTask, onDeleteTask, dragState, onDragStart, onDragOver, onDrop }) {
+function Quadrant({ quadrant, tasks, onCreateTask, onUpdateTask, onDeleteTask, dragState, onDragStart, onDragOver, onDrop, onMoveTask }) {
   const activeTasks = tasks.filter(t => !t.done)
   const completedTasks = tasks.filter(t => t.done)
   const [showCompleted, setShowCompleted] = useState(false)
@@ -354,7 +393,7 @@ function Quadrant({ quadrant, tasks, onCreateTask, onUpdateTask, onDeleteTask, d
           </div>
         ) : (
           <AnimatePresence>
-            {activeTasks.map(task => (
+            {activeTasks.map((task, idx) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -365,6 +404,10 @@ function Quadrant({ quadrant, tasks, onCreateTask, onUpdateTask, onDeleteTask, d
                   onDragStart: () => onDragStart(task.id, task.quadrant),
                   style: { cursor: 'grab' },
                 }}
+                onMoveUp={() => onMoveTask?.(task.id, quadrant.id, 'up')}
+                onMoveDown={() => onMoveTask?.(task.id, quadrant.id, 'down')}
+                isFirst={idx === 0}
+                isLast={idx === activeTasks.length - 1}
               />
             ))}
           </AnimatePresence>
@@ -754,10 +797,64 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
     try { return JSON.parse(localStorage.getItem('brainDump') || '[]') } catch { return [] }
   })
 
+  const [taskOrder, setTaskOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('taskOrder') || '{}') } catch { return {} }
+  })
+
   // Persist brain dump to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('brainDump', JSON.stringify(brainDumpItems))
   }, [brainDumpItems])
+
+  // Persist task order to localStorage
+  useEffect(() => {
+    localStorage.setItem('taskOrder', JSON.stringify(taskOrder))
+  }, [taskOrder])
+
+  // Sync taskOrder when tasks change (new tasks appended, deleted/moved tasks removed)
+  useEffect(() => {
+    setTaskOrder(prev => {
+      const next = { Q1: [...(prev.Q1||[])], Q2: [...(prev.Q2||[])], Q3: [...(prev.Q3||[])], Q4: [...(prev.Q4||[])] }
+      // Add new task IDs to the end of their quadrant's order
+      tasks.forEach(task => {
+        const q = task.quadrant
+        if (!q || !['Q1','Q2','Q3','Q4'].includes(q)) return
+        if (!next[q].includes(task.id)) next[q].push(task.id)
+      })
+      // Remove IDs that no longer exist or have moved to a different quadrant
+      ;['Q1','Q2','Q3','Q4'].forEach(q => {
+        next[q] = next[q].filter(id => tasks.some(t => t.id === id && t.quadrant === q))
+      })
+      return next
+    })
+  }, [tasks])
+
+  // Sort tasks within a quadrant by stored order
+  const getSortedTasks = useCallback((quadrantTasks, quadrantId) => {
+    const order = taskOrder[quadrantId] || []
+    return [...quadrantTasks].sort((a, b) => {
+      const ai = order.indexOf(a.id)
+      const bi = order.indexOf(b.id)
+      if (ai === -1 && bi === -1) return 0
+      if (ai === -1) return 1
+      if (bi === -1) return -1
+      return ai - bi
+    })
+  }, [taskOrder])
+
+  // Move a task up or down within its quadrant
+  const moveTask = useCallback((taskId, quadrantId, direction) => {
+    setTaskOrder(prev => {
+      const order = [...(prev[quadrantId] || [])]
+      const idx = order.indexOf(taskId)
+      if (idx === -1) return prev
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1
+      if (newIdx < 0 || newIdx >= order.length) return prev
+      const next = [...order]
+      ;[next[idx], next[newIdx]] = [next[newIdx], next[idx]]
+      return { ...prev, [quadrantId]: next }
+    })
+  }, [])
 
   const addBrainDumpItem = useCallback((title) => {
     setBrainDumpItems(prev => [...prev, { id: Date.now().toString(), title }])
@@ -878,7 +975,7 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
                 <Quadrant
                   key={q.id}
                   quadrant={q}
-                  tasks={classified.filter(t => t.quadrant === q.id)}
+                  tasks={getSortedTasks(classified.filter(t => t.quadrant === q.id), q.id)}
                   onCreateTask={onCreateTask}
                   onUpdateTask={onUpdateTask}
                   onDeleteTask={onDeleteTask}
@@ -886,6 +983,7 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
+                  onMoveTask={moveTask}
                 />
               ))}
             </div>
