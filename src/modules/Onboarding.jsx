@@ -1,5 +1,5 @@
 // FILE: src/modules/Onboarding.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -21,6 +21,21 @@ export default function Onboarding({ onComplete }) {
   const [authLoading, setAuthLoading] = useState(false)
   const [user, setUser] = useState(null)
   const [firstName, setFirstName] = useState('')
+
+  // Detect existing session on mount (e.g. after Google OAuth redirect)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const name = session.user.user_metadata?.full_name?.split(' ')[0]
+          || session.user.email?.split('@')[0]
+          || ''
+        setFirstName(name)
+        setUser(session.user)
+        setDirection(1)
+        setScreen(1)
+      }
+    })
+  }, [])
   const [visionText, setVisionText] = useState('')
   const [goalTitle, setGoalTitle] = useState('')
   const [goalArea, setGoalArea] = useState('')
@@ -71,34 +86,19 @@ export default function Onboarding({ onComplete }) {
 
   const handleComplete = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        // Save vision if entered
-        if (visionText.trim()) {
-          await supabase.from('vision_layers').insert({
-            user_id: session.user.id,
-            horizon: 'quarterly',
-            content: visionText.trim(),
-          })
-        }
-        // Save goal if entered
-        if (goalTitle.trim()) {
-          await supabase.from('goals').insert({
-            user_id: session.user.id,
-            title: goalTitle.trim(),
-            area: goalArea || 'Business',
-            due_date: goalDue || null,
-            status: 'active',
-          })
-        }
-        // Mark user as onboarded
-        await supabase.from('users').upsert({
-          id: session.user.id,
-          email: session.user.email,
-          first_name: firstName || session.user.email.split('@')[0],
-          onboarded: true,
-        })
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession()
+      console.log('Session:', session, 'Error:', sessErr)
+      if (!session?.user) {
+        console.error('No session found — cannot complete onboarding')
+        onComplete()
+        return
       }
+      const { error: upsertErr } = await supabase.from('users').upsert({
+        user_id: session.user.id,
+        first_name: firstName || session.user.email.split('@')[0],
+        onboarded: true,
+      }, { onConflict: 'user_id' })
+      console.log('Upsert error:', upsertErr)
     } catch (err) {
       console.error('Onboarding save error:', err)
     }
