@@ -1,5 +1,5 @@
 // FILE: src/modules/PriorityMatrix.jsx
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, X, ChevronDown, ChevronRight, LayoutGrid, List,
@@ -92,7 +92,7 @@ function TaskExpandPanel({ task, onUpdate, onDelete, onClose }) {
   const [dueDate, setDueDate] = useState(task.due_date || '')
 
   const save = () => {
-    onUpdate?.({ ...task, title, notes, area, due_date: dueDate })
+    onUpdate?.(task.id, { title, notes, area_of_life: area, due_date: dueDate })
     onClose()
   }
 
@@ -151,7 +151,7 @@ function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
 
   const handleComplete = (e) => {
     e.stopPropagation()
-    onUpdate?.({ ...task, completed: !task.completed })
+    onUpdate?.(task.id, { done: !task.done })
   }
 
   return (
@@ -170,7 +170,7 @@ function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 10, padding: '11px 13px',
           transition: 'box-shadow 0.15s, border-color 0.15s',
-          opacity: task.completed ? 0.5 : 1,
+          opacity: task.done ? 0.5 : 1,
         }}
         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.09)'; e.currentTarget.style.borderColor = 'var(--border-strong)' }}
         onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'var(--border)' }}
@@ -181,7 +181,7 @@ function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
             onClick={handleComplete}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 1, color: quadrantColor }}
           >
-            {task.completed
+            {task.done
               ? <CheckCircle2 size={16} />
               : <Circle size={16} style={{ color: 'var(--border-strong)' }} />
             }
@@ -189,7 +189,7 @@ function TaskCard({ task, quadrantColor, onUpdate, onDelete, dragHandlers }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4,
-              textDecoration: task.completed ? 'line-through' : 'none',
+              textDecoration: task.done ? 'line-through' : 'none',
               overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
             }}>
               {task.title}
@@ -243,7 +243,7 @@ function InlineAdd({ quadrant, onAdd }) {
 
   const submit = () => {
     if (!value.trim()) return
-    onAdd({ title: value.trim(), quadrant, completed: false })
+    onAdd({ title: value.trim(), quadrant, done: false })
     setValue('')
     setOpen(false)
   }
@@ -302,8 +302,8 @@ function InlineAdd({ quadrant, onAdd }) {
 // ─── Quadrant ─────────────────────────────────────────────────────────────────
 
 function Quadrant({ quadrant, tasks, onCreateTask, onUpdateTask, onDeleteTask, dragState, onDragStart, onDragOver, onDrop }) {
-  const activeTasks = tasks.filter(t => !t.completed)
-  const completedTasks = tasks.filter(t => t.completed)
+  const activeTasks = tasks.filter(t => !t.done)
+  const completedTasks = tasks.filter(t => t.done)
   const [showCompleted, setShowCompleted] = useState(false)
   const isDragOver = dragState?.overQuadrant === quadrant.id
 
@@ -550,14 +550,14 @@ function ListView({ tasks, onUpdateTask, onDeleteTask }) {
                 {/* Task Title */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
-                    onClick={() => onUpdateTask?.({ ...task, completed: !task.completed })}
+                    onClick={() => onUpdateTask?.(task.id, { done: !task.done })}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: q?.color || 'var(--text-muted)', flexShrink: 0 }}
                   >
                     {task.completed ? <CheckCircle2 size={15} /> : <Circle size={15} style={{ color: 'var(--border-strong)' }} />}
                   </button>
                   <span style={{
                     fontSize: 13, fontWeight: 500, color: 'var(--text-primary)',
-                    textDecoration: task.completed ? 'line-through' : 'none',
+                    textDecoration: task.done ? 'line-through' : 'none',
                     overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
                   }}>
                     {task.title}
@@ -592,19 +592,124 @@ function ListView({ tasks, onUpdateTask, onDeleteTask }) {
   )
 }
 
+// ─── Brain Dump ───────────────────────────────────────────────────────────────
+
+function BrainDump({ items, onAdd, onRemove, onDragStart }) {
+  const [input, setInput] = useState('')
+  const inputRef = useRef(null)
+
+  const add = () => {
+    if (!input.trim()) return
+    onAdd(input.trim())
+    setInput('')
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div style={{
+      marginBottom: 20,
+      background: 'var(--bg-page)',
+      border: '1px solid var(--border)',
+      borderRadius: 14,
+      padding: '16px 18px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Brain Dump</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono' }}>
+          — type anything, then drag it into a quadrant
+        </span>
+        {items.length > 0 && (
+          <span style={{
+            fontSize: 11, fontFamily: 'IBM Plex Mono',
+            background: 'var(--gold)' + '20', color: 'var(--gold-dark)',
+            borderRadius: 10, padding: '2px 8px', marginLeft: 'auto',
+          }}>{items.length}</span>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: items.length > 0 ? 12 : 0 }}>
+        <input
+          ref={inputRef}
+          className="input"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') add() }}
+          placeholder="What's on your mind? Hit Enter to add..."
+          style={{ flex: 1, fontSize: 13, padding: '8px 12px' }}
+        />
+        <button
+          onClick={add}
+          style={{
+            background: 'var(--gradient-btn)', border: 'none', borderRadius: 8,
+            padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
+            display: 'flex', alignItems: 'center',
+          }}
+        >
+          <Plus size={14} color="#1A1D23" />
+        </button>
+      </div>
+
+      {items.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {items.map(item => (
+            <div
+              key={item.id}
+              draggable
+              onDragStart={() => onDragStart(item.id)}
+              style={{
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '7px 12px',
+                fontSize: 13, color: 'var(--text-primary)', cursor: 'grab',
+                display: 'flex', alignItems: 'center', gap: 8,
+                userSelect: 'none',
+              }}
+            >
+              {item.title}
+              <button
+                onClick={() => onRemove(item.id)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)', display: 'flex' }}
+              >
+                <X size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask, onDeleteTask }) {
   const [viewMode, setViewMode] = useState('matrix')
   const [dragState, setDragState] = useState(null)
+  const [brainDumpItems, setBrainDumpItems] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('brainDump') || '[]') } catch { return [] }
+  })
 
-  const activeTasks = tasks.filter(t => !t.completed || t._recentlyCompleted)
+  // Persist brain dump to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('brainDump', JSON.stringify(brainDumpItems))
+  }, [brainDumpItems])
+
+  const addBrainDumpItem = useCallback((title) => {
+    setBrainDumpItems(prev => [...prev, { id: Date.now().toString(), title }])
+  }, [])
+
+  const removeBrainDumpItem = useCallback((id) => {
+    setBrainDumpItems(prev => prev.filter(i => i.id !== id))
+  }, [])
 
   const unclassified = tasks.filter(t => !t.quadrant || !['Q1','Q2','Q3','Q4'].includes(t.quadrant))
   const classified = tasks.filter(t => t.quadrant && ['Q1','Q2','Q3','Q4'].includes(t.quadrant))
 
   const handleDragStart = useCallback((taskId, fromQuadrant) => {
-    setDragState({ taskId, fromQuadrant, overQuadrant: null })
+    setDragState({ taskId, fromQuadrant, overQuadrant: null, fromBrainDump: false })
+  }, [])
+
+  const handleBrainDumpDragStart = useCallback((itemId) => {
+    setDragState({ taskId: null, fromQuadrant: null, overQuadrant: null, fromBrainDump: true, brainDumpItemId: itemId })
   }, [])
 
   const handleDragOver = useCallback((quadrantId) => {
@@ -612,13 +717,20 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
   }, [])
 
   const handleDrop = useCallback((toQuadrant) => {
-    if (!dragState?.taskId) return
-    const task = tasks.find(t => t.id === dragState.taskId)
-    if (task && task.quadrant !== toQuadrant) {
-      onUpdateTask?.({ ...task, quadrant: toQuadrant })
+    if (dragState?.fromBrainDump && dragState?.brainDumpItemId) {
+      const item = brainDumpItems.find(i => i.id === dragState.brainDumpItemId)
+      if (item) {
+        onCreateTask?.({ title: item.title, quadrant: toQuadrant, done: false })
+        setBrainDumpItems(prev => prev.filter(i => i.id !== dragState.brainDumpItemId))
+      }
+    } else if (dragState?.taskId) {
+      const task = tasks.find(t => t.id === dragState.taskId)
+      if (task && task.quadrant !== toQuadrant) {
+        onUpdateTask?.(task.id, { quadrant: toQuadrant })
+      }
     }
     setDragState(null)
-  }, [dragState, tasks, onUpdateTask])
+  }, [dragState, tasks, onUpdateTask, brainDumpItems, onCreateTask])
 
   return (
     <div style={{ padding: '0 0 64px' }}>
@@ -661,6 +773,14 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
           ))}
         </div>
       </div>
+
+      {/* Brain Dump */}
+      <BrainDump
+        items={brainDumpItems}
+        onAdd={addBrainDumpItem}
+        onRemove={removeBrainDumpItem}
+        onDragStart={handleBrainDumpDragStart}
+      />
 
       {/* Unclassified Inbox */}
       <UnclassifiedInbox tasks={unclassified} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />

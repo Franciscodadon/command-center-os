@@ -268,20 +268,41 @@ Give me one specific observation about what today's entry reveals, and one probi
         onChange={v => setField('notes', v)}
       />
 
-      {/* Auto-save indicator */}
-      <AnimatePresence>
-        {saved && (
-          <motion.span
-            className="label-mono self-end"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ color: 'var(--status-green)' }}
-          >
-            Saved
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {/* Save button + indicator */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, padding: '16px', borderRadius: 12,
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+      }}>
+        <AnimatePresence>
+          {saved ? (
+            <motion.span
+              className="label-mono"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{ color: 'var(--status-green)', fontSize: 13 }}
+            >
+              ✓ Entry Saved
+            </motion.span>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Click to save your journal entry for today
+            </span>
+          )}
+        </AnimatePresence>
+        <button
+          className="btn-primary"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: 14 }}
+          onClick={() => {
+            onSaveEntry({ date: currentDate, ...form })
+            setSaved(true)
+            setTimeout(() => setSaved(false), 2000)
+          }}
+        >
+          <Send size={14} /> Save Entry
+        </button>
+      </div>
 
       {/* AI Reflection */}
       <div className="flex flex-col gap-3">
