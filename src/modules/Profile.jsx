@@ -1,7 +1,7 @@
 // FILE: src/modules/Profile.jsx
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save } from 'lucide-react'
+import { Save, Mail, RefreshCw } from 'lucide-react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -85,6 +85,14 @@ export default function Profile({
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
 
+  // Email reset state
+  const [newEmail, setNewEmail]         = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailMsg, setEmailMsg]         = useState(null) // { type: 'success'|'error', text }
+  const [showEmailForm, setShowEmailForm] = useState(false)
+
+  const currentEmail = session?.user?.email || ''
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('profileData') || '{}')
     setFirstName(user?.first_name || stored.firstName || '')
@@ -106,6 +114,25 @@ export default function Profile({
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleEmailUpdate = async () => {
+    if (!newEmail.trim() || !newEmail.includes('@')) {
+      setEmailMsg({ type: 'error', text: 'Please enter a valid email address.' })
+      return
+    }
+    setEmailSending(true)
+    setEmailMsg(null)
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() })
+      if (error) throw error
+      setEmailMsg({ type: 'success', text: `Confirmation sent to ${newEmail}. Check your inbox to confirm the change.` })
+      setNewEmail('')
+      setShowEmailForm(false)
+    } catch (err) {
+      setEmailMsg({ type: 'error', text: err.message || 'Failed to update email. Try again.' })
+    }
+    setEmailSending(false)
   }
 
   // Avatar initials
@@ -190,6 +217,76 @@ export default function Profile({
             <label className="label-mono">Role / Title</label>
             <input className="input" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. Founder, CEO, Executive" />
           </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--border)' }} />
+
+        {/* Email section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label className="label-mono">Email Address</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Mail size={13} color="var(--text-muted)" />
+                <span style={{ fontSize: 14, color: 'var(--text-primary)' }}>{currentEmail || '—'}</span>
+              </div>
+            </div>
+            <button
+              className="btn-ghost"
+              onClick={() => { setShowEmailForm(e => !e); setEmailMsg(null) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 12 }}
+            >
+              <RefreshCw size={12} />
+              Change Email
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showEmailForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="input"
+                      type="email"
+                      value={newEmail}
+                      onChange={e => setNewEmail(e.target.value)}
+                      placeholder="Enter new email address"
+                      style={{ flex: 1 }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleEmailUpdate() }}
+                    />
+                    <button
+                      className="btn-primary"
+                      onClick={handleEmailUpdate}
+                      disabled={emailSending}
+                      style={{ flexShrink: 0, padding: '8px 16px', fontSize: 13 }}
+                    >
+                      {emailSending ? 'Sending...' : 'Send Confirmation'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                    A confirmation link will be sent to your new email. Your email won't change until you click it.
+                  </p>
+                  {emailMsg && (
+                    <div style={{
+                      fontSize: 12, padding: '8px 12px', borderRadius: 8,
+                      background: emailMsg.type === 'success' ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+                      color: emailMsg.type === 'success' ? 'var(--status-green)' : 'var(--status-red)',
+                      border: `1px solid ${emailMsg.type === 'success' ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                    }}>
+                      {emailMsg.text}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Save button */}
