@@ -7,7 +7,7 @@ import AIAgent from './components/AIAgent'
 import Onboarding from './modules/Onboarding'
 
 // Lazy module imports — swap for real modules as they are built
-let CommandCenter, VisionGoals, PriorityMatrix, Projects, Scorecard, Journal, CalendarModule, Inbox
+let CommandCenter, VisionGoals, PriorityMatrix, Projects, Scorecard, Journal, CalendarModule, Inbox, Profile
 
 try { CommandCenter  = (await import('./modules/CommandCenter')).default  } catch { CommandCenter  = Placeholder('Command Center')  }
 try { VisionGoals   = (await import('./modules/VisionGoals')).default     } catch { VisionGoals   = Placeholder('Vision & Goals')   }
@@ -17,6 +17,7 @@ try { Scorecard     = (await import('./modules/Scorecard')).default       } catc
 try { Journal       = (await import('./modules/Journal')).default         } catch { Journal       = Placeholder('Journal')          }
 try { CalendarModule= (await import('./modules/CalendarModule')).default  } catch { CalendarModule= Placeholder('Calendar')         }
 try { Inbox         = (await import('./modules/Inbox')).default           } catch { Inbox         = Placeholder('Inbox')            }
+try { Profile       = (await import('./modules/Profile')).default        } catch { Profile       = Placeholder('Profile')          }
 
 function Placeholder(name) {
   return function PlaceholderModule() {
@@ -564,6 +565,11 @@ export default function App() {
       googleToken,
       onConnect: () => console.log('Connect Gmail OAuth'),
     },
+    profile: {
+      ...commonProps,
+      scorecardMetrics, scorecardValues,
+      leadMeasures, lmActuals,
+    },
   }
 
   const MODULE_MAP = {
@@ -575,6 +581,7 @@ export default function App() {
     journal:   Journal,
     calendar:  CalendarModule,
     inbox:     Inbox,
+    profile:   Profile,
   }
 
   const ActiveModule = MODULE_MAP[activeModule] || MODULE_MAP['command']

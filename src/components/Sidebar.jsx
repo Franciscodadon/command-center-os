@@ -1,4 +1,4 @@
-import { Home, Target, Grid2X2, FolderKanban, BarChart3, BookOpen, Calendar, Mail, Settings, LogOut } from 'lucide-react'
+import { Home, Target, Grid2X2, FolderKanban, BarChart3, BookOpen, Calendar, Mail, Settings, LogOut, UserCircle } from 'lucide-react'
 import Logo from './Logo'
 
 const NAV = [
@@ -10,6 +10,7 @@ const NAV = [
   { id: 'journal',   label: 'Journal',         icon: BookOpen },
   { id: 'calendar',  label: 'Calendar',        icon: Calendar },
   { id: 'inbox',     label: 'Inbox',           icon: Mail },
+  { id: 'profile',   label: 'Profile',         icon: UserCircle },
 ]
 
 export default function Sidebar({ active, onChange, user, syncStatus, onSignOut }) {
