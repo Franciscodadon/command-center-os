@@ -594,8 +594,9 @@ function ListView({ tasks, onUpdateTask, onDeleteTask }) {
 
 // ─── Brain Dump ───────────────────────────────────────────────────────────────
 
-function BrainDump({ items, onAdd, onRemove, onDragStart }) {
+function BrainDump({ items, onAdd, onRemove, onAssign, onDragStart }) {
   const [input, setInput] = useState('')
+  const [collapsed, setCollapsed] = useState(false)
   const inputRef = useRef(null)
 
   const add = () => {
@@ -605,74 +606,139 @@ function BrainDump({ items, onAdd, onRemove, onDragStart }) {
     inputRef.current?.focus()
   }
 
+  const QUAD_OPTIONS = [
+    { id: 'Q1', label: 'Q1 — Do First',   color: '#DC2626' },
+    { id: 'Q2', label: 'Q2 — Schedule',   color: '#2563EB' },
+    { id: 'Q3', label: 'Q3 — Delegate',   color: '#D97706' },
+    { id: 'Q4', label: 'Q4 — Eliminate',  color: '#6B7280' },
+  ]
+
   return (
     <div style={{
       marginBottom: 20,
       background: 'var(--bg-page)',
       border: '1px solid var(--border)',
       borderRadius: 14,
-      padding: '16px 18px',
+      overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      {/* Header */}
+      <div
+        onClick={() => setCollapsed(c => !c)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '14px 18px', cursor: 'pointer',
+          borderBottom: collapsed ? 'none' : '1px solid var(--border)',
+        }}
+      >
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Brain Dump</span>
         <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono' }}>
-          — type anything, then drag it into a quadrant
+          — capture anything, then assign to a quadrant
         </span>
         {items.length > 0 && (
           <span style={{
             fontSize: 11, fontFamily: 'IBM Plex Mono',
-            background: 'var(--gold)' + '20', color: 'var(--gold-dark)',
-            borderRadius: 10, padding: '2px 8px', marginLeft: 'auto',
+            background: 'rgba(201,168,76,0.15)', color: 'var(--gold-dark)',
+            borderRadius: 10, padding: '2px 8px',
           }}>{items.length}</span>
         )}
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: items.length > 0 ? 12 : 0 }}>
-        <input
-          ref={inputRef}
-          className="input"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') add() }}
-          placeholder="What's on your mind? Hit Enter to add..."
-          style={{ flex: 1, fontSize: 13, padding: '8px 12px' }}
+        <ChevronDown
+          size={14}
+          color="var(--text-muted)"
+          style={{ marginLeft: 'auto', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}
         />
-        <button
-          onClick={add}
-          style={{
-            background: 'var(--gradient-btn)', border: 'none', borderRadius: 8,
-            padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
-            display: 'flex', alignItems: 'center',
-          }}
-        >
-          <Plus size={14} color="#1A1D23" />
-        </button>
       </div>
 
-      {items.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {items.map(item => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => onDragStart(item.id)}
+      {!collapsed && (
+        <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Input row */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              ref={inputRef}
+              className="input"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') add() }}
+              placeholder="What's on your mind? Press Enter to add..."
+              style={{ flex: 1, fontSize: 13, padding: '8px 12px' }}
+            />
+            <button
+              onClick={add}
               style={{
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 8, padding: '7px 12px',
-                fontSize: 13, color: 'var(--text-primary)', cursor: 'grab',
-                display: 'flex', alignItems: 'center', gap: 8,
-                userSelect: 'none',
+                background: 'var(--gradient-btn)', border: 'none', borderRadius: 8,
+                padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
+                display: 'flex', alignItems: 'center',
               }}
             >
-              {item.title}
-              <button
-                onClick={() => onRemove(item.id)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)', display: 'flex' }}
-              >
-                <X size={11} />
-              </button>
+              <Plus size={14} color="#1A1D23" />
+            </button>
+          </div>
+
+          {/* List */}
+          {items.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {items.map((item, idx) => (
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => onDragStart(item.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: 10, padding: '10px 14px',
+                    cursor: 'grab',
+                  }}
+                >
+                  {/* Index */}
+                  <span style={{
+                    fontSize: 11, fontFamily: 'IBM Plex Mono', color: 'var(--text-muted)',
+                    minWidth: 18, textAlign: 'right', flexShrink: 0,
+                  }}>
+                    {idx + 1}.
+                  </span>
+
+                  {/* Title */}
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                    {item.title}
+                  </span>
+
+                  {/* Assign dropdown */}
+                  <select
+                    defaultValue=""
+                    onChange={e => {
+                      if (e.target.value) onAssign(item.id, e.target.value)
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                      background: 'var(--bg-input)', border: '1px solid var(--border)',
+                      borderRadius: 7, padding: '5px 10px', fontSize: 12,
+                      color: 'var(--text-secondary)', cursor: 'pointer',
+                      fontFamily: 'IBM Plex Mono', flexShrink: 0,
+                      appearance: 'none', minWidth: 130,
+                    }}
+                  >
+                    <option value="" disabled>Assign to...</option>
+                    {QUAD_OPTIONS.map(q => (
+                      <option key={q.id} value={q.id}>{q.label}</option>
+                    ))}
+                  </select>
+
+                  {/* Delete */}
+                  <button
+                    onClick={e => { e.stopPropagation(); onRemove(item.id) }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--text-muted)', display: 'flex', flexShrink: 0 }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {items.length === 0 && (
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+              Nothing dumped yet. Type above and hit Enter.
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -700,6 +766,14 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
   const removeBrainDumpItem = useCallback((id) => {
     setBrainDumpItems(prev => prev.filter(i => i.id !== id))
   }, [])
+
+  const assignBrainDumpItem = useCallback((id, quadrant) => {
+    const item = brainDumpItems.find(i => i.id === id)
+    if (item) {
+      onCreateTask?.({ title: item.title, quadrant, done: false })
+      setBrainDumpItems(prev => prev.filter(i => i.id !== id))
+    }
+  }, [brainDumpItems, onCreateTask])
 
   const unclassified = tasks.filter(t => !t.quadrant || !['Q1','Q2','Q3','Q4'].includes(t.quadrant))
   const classified = tasks.filter(t => t.quadrant && ['Q1','Q2','Q3','Q4'].includes(t.quadrant))
@@ -779,6 +853,7 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
         items={brainDumpItems}
         onAdd={addBrainDumpItem}
         onRemove={removeBrainDumpItem}
+        onAssign={assignBrainDumpItem}
         onDragStart={handleBrainDumpDragStart}
       />
 
