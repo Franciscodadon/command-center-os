@@ -1,7 +1,7 @@
 // FILE: src/modules/Profile.jsx
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Mail, RefreshCw } from 'lucide-react'
+import { Save, Mail, RefreshCw, Lock, Eye, EyeOff } from 'lucide-react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -93,6 +93,14 @@ export default function Profile({
 
   const currentEmail = session?.user?.email || ''
 
+  // Password state
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [newPassword, setNewPassword]           = useState('')
+  const [confirmPassword, setConfirmPassword]   = useState('')
+  const [showPw, setShowPw]                     = useState(false)
+  const [pwSaving, setPwSaving]                 = useState(false)
+  const [pwMsg, setPwMsg]                       = useState(null)
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('profileData') || '{}')
     setFirstName(user?.first_name || stored.firstName || '')
@@ -133,6 +141,44 @@ export default function Profile({
       setEmailMsg({ type: 'error', text: err.message || 'Failed to update email. Try again.' })
     }
     setEmailSending(false)
+  }
+
+  const handlePasswordUpdate = async () => {
+    if (newPassword.length < 6) {
+      setPwMsg({ type: 'error', text: 'Password must be at least 6 characters.' })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPwMsg({ type: 'error', text: 'Passwords do not match.' })
+      return
+    }
+    setPwSaving(true)
+    setPwMsg(null)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+      setPwMsg({ type: 'success', text: 'Password updated successfully.' })
+      setNewPassword('')
+      setConfirmPassword('')
+      setShowPasswordForm(false)
+    } catch (err) {
+      setPwMsg({ type: 'error', text: err.message || 'Failed to update password. Try again.' })
+    }
+    setPwSaving(false)
+  }
+
+  const handleForgotPassword = async () => {
+    if (!currentEmail) return
+    setPwSaving(true)
+    setPwMsg(null)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(currentEmail)
+      if (error) throw error
+      setPwMsg({ type: 'success', text: `Password reset link sent to ${currentEmail}. Check your inbox.` })
+    } catch (err) {
+      setPwMsg({ type: 'error', text: err.message || 'Failed to send reset email.' })
+    }
+    setPwSaving(false)
   }
 
   // Avatar initials
@@ -281,6 +327,101 @@ export default function Profile({
                       border: `1px solid ${emailMsg.type === 'success' ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
                     }}>
                       {emailMsg.text}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--border)' }} />
+
+        {/* Password section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label className="label-mono">Password</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Lock size={13} color="var(--text-muted)" />
+                <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>••••••••</span>
+              </div>
+            </div>
+            <button
+              className="btn-ghost"
+              onClick={() => { setShowPasswordForm(p => !p); setPwMsg(null) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 12 }}
+            >
+              <Lock size={12} />
+              Change Password
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showPasswordForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4 }}>
+                  {/* New password */}
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      className="input"
+                      type={showPw ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      placeholder="New password (min 6 characters)"
+                      style={{ width: '100%', paddingRight: 40 }}
+                    />
+                    <button
+                      onClick={() => setShowPw(p => !p)}
+                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}
+                    >
+                      {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+
+                  {/* Confirm password */}
+                  <input
+                    className="input"
+                    type={showPw ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    onKeyDown={e => { if (e.key === 'Enter') handlePasswordUpdate() }}
+                  />
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <button
+                      onClick={handleForgotPassword}
+                      disabled={pwSaving}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', textDecoration: 'underline', padding: 0 }}
+                    >
+                      Forgot password? Send reset link instead
+                    </button>
+                    <button
+                      className="btn-primary"
+                      onClick={handlePasswordUpdate}
+                      disabled={pwSaving}
+                      style={{ flexShrink: 0, padding: '8px 16px', fontSize: 13 }}
+                    >
+                      {pwSaving ? 'Saving...' : 'Update Password'}
+                    </button>
+                  </div>
+
+                  {pwMsg && (
+                    <div style={{
+                      fontSize: 12, padding: '8px 12px', borderRadius: 8,
+                      background: pwMsg.type === 'success' ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+                      color: pwMsg.type === 'success' ? 'var(--status-green)' : 'var(--status-red)',
+                      border: `1px solid ${pwMsg.type === 'success' ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                    }}>
+                      {pwMsg.text}
                     </div>
                   )}
                 </div>
