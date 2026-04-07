@@ -968,6 +968,7 @@ export default function PriorityMatrix({ tasks = [], onCreateTask, onUpdateTask,
         >
           {viewMode === 'matrix' ? (
             <div
+              className="matrix-grid"
               style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 14 }}
               onDragEnd={() => setDragState(null)}
             >

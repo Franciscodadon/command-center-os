@@ -238,6 +238,19 @@ textarea.input {
     padding: 72px 16px 80px !important;
   }
 
+  .matrix-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card {
+    padding: 16px !important;
+  }
+
   .sidebar-nav-list {
     transform: translateX(-260px);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);

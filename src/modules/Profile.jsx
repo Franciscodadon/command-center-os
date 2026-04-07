@@ -250,7 +250,7 @@ export default function Profile({
         </div>
 
         {/* Form */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label className="label-mono">First Name</label>
             <input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" />
