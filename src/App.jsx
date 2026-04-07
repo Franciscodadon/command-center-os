@@ -80,6 +80,7 @@ export default function App() {
   const [syncStatus, setSyncStatus]         = useState('synced')
   const [agentOpen, setAgentOpen]           = useState(false)
   const [googleToken, setGoogleToken]       = useState(null)
+  const [sidebarOpen, setSidebarOpen]       = useState(false)
 
   // Data state
   const [goals, setGoals]                   = useState([])
@@ -589,6 +590,29 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)' }}>
+
+      {/* Mobile top bar */}
+      <div className="mobile-top-bar">
+        <button
+          onClick={() => setSidebarOpen(o => !o)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(247,244,239,0.8)', padding: 4, display: 'flex', flexShrink: 0 }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <span style={{ color: 'var(--text-inverse)', fontSize: 14, fontWeight: 600, fontFamily: 'IBM Plex Sans', flex: 1 }}>
+          Command Center OS
+        </span>
+        <div
+          style={{ background: 'var(--gradient-gold)', color: '#1A1D23', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}
+        >
+          {user?.first_name?.[0]?.toUpperCase() || '?'}
+        </div>
+      </div>
+
       {/* Sidebar */}
       <Sidebar
         active={activeModule}
@@ -596,17 +620,19 @@ export default function App() {
         user={user}
         syncStatus={syncStatus}
         onSignOut={handleSignOut}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
 
       {/* Main content */}
       <main
+        className="main-content-area"
         style={{
           marginLeft: 220,
           flex: 1,
           padding: '32px 36px',
           minHeight: '100vh',
           background: 'var(--bg-page)',
-          // Shift left when agent panel is open on desktop
           transition: 'padding-right 0.3s',
         }}
       >

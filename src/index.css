@@ -202,3 +202,48 @@ textarea.input {
 .agent-glow {
   animation: glow 3s ease-in-out infinite;
 }
+
+/* ─── Mobile Responsive ──────────────────────────────────────────────────── */
+
+.mobile-top-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-top-bar {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--bg-nav);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    z-index: 30;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .sidebar-overlay {
+    display: block !important;
+  }
+
+  .mobile-close-btn {
+    display: flex !important;
+  }
+
+  .main-content-area {
+    margin-left: 0 !important;
+    padding: 72px 16px 80px !important;
+  }
+
+  .sidebar-nav-list {
+    transform: translateX(-260px);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-nav-list.sidebar-open {
+    transform: translateX(0);
+  }
+}
