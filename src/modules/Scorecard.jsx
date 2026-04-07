@@ -328,7 +328,7 @@ Provide:
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between module-header">
         <div>
           <h1 className="font-semibold text-xl" style={{ color: 'var(--text-primary)' }}>Scorecard</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Weekly performance snapshot</p>
@@ -411,7 +411,8 @@ Provide:
         {activeAreas.length === 0 ? (
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No lead measures with areas assigned.</p>
         ) : (
-          <div className="flex flex-col">
+          <div className="scorecard-table-wrap">
+          <div className="flex flex-col" style={{ minWidth: 420 }}>
             {/* Header row */}
             <div className="grid text-xs px-2 pb-2 mb-1" style={{ gridTemplateColumns: '1fr 80px 80px 70px 90px', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border)' }}>
               <span>Area</span>
@@ -467,6 +468,7 @@ Provide:
               )
             })}
           </div>
+          </div>
         )}
       </div>
 
@@ -516,7 +518,8 @@ Provide:
         {leadMeasures.length === 0 ? (
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No lead measures yet.</p>
         ) : (
-          <div className="flex flex-col">
+          <div className="scorecard-table-wrap">
+          <div className="flex flex-col" style={{ minWidth: 460 }}>
             <div className="grid px-2 pb-2 mb-1 text-xs" style={{ gridTemplateColumns: '1fr 120px 90px 90px 70px', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border)' }}>
               <span>Lead Measure</span>
               <span>Parent Goal</span>
@@ -575,6 +578,7 @@ Provide:
               )
             })}
           </div>
+          </div>
         )}
       </div>
 
@@ -589,7 +593,8 @@ Provide:
         {scorecardMetrics.length === 0 ? (
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Track custom metrics like revenue, weight, or any number that matters.</p>
         ) : (
-          <div className="flex flex-col">
+          <div className="scorecard-table-wrap">
+          <div className="flex flex-col" style={{ minWidth: 380 }}>
             <div className="grid px-2 pb-2 mb-1 text-xs" style={{ gridTemplateColumns: '1fr 100px 100px 80px', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border)' }}>
               <span>Metric</span>
               <span className="text-right">Target</span>
@@ -635,6 +640,7 @@ Provide:
                 </div>
               )
             })}
+          </div>
           </div>
         )}
       </div>

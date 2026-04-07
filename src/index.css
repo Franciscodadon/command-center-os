@@ -251,6 +251,23 @@ textarea.input {
     padding: 16px !important;
   }
 
+  /* Scorecard tables scroll horizontally */
+  .scorecard-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Scorecard + other module headers wrap on small screens */
+  .module-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Charts shrink gracefully */
+  .recharts-responsive-container {
+    min-width: 0 !important;
+  }
+
   .sidebar-nav-list {
     transform: translateX(-260px);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
